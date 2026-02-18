@@ -186,9 +186,10 @@ def build_json(root):
     # One-line schema: helps AI readers understand the structure at a glance.
     # Keys marked ? are optional (omitted when not present).
     score['_schema'] = (
-        "measures[]{number, key_fifths?, time?, tempo?, dynamics[]?, directions[]?, "
-        "notes[]{voice, staff, pitch|'rest', type, dots?, chord?, tie?, grace?, "
-        "artic[]?, ornament[]?, slur?, tuplet?}}"
+        "measures[]{number, key_fifths?, time?, tempo?, dynamics[]?, wedges[]?, "
+        "pedals[]?, directions[]?, "
+        "notes[]{voice, staff, pitch|'rest', type, dots?, beam[]?, chord?, tie?, "
+        "grace?, artic[]?, ornament[]?, slur?, tuplet?}}"
     )
 
     score['title']    = root.findtext('work/work-title') or \
@@ -239,6 +240,30 @@ def build_json(root):
         if directions:
             m['directions'] = directions
 
+        # Hairpin wedges (crescendo/diminuendo graphical markings)
+        wedges = []
+        for dir_el in measure_el.findall('direction'):
+            for wedge_el in dir_el.findall('.//wedge'):
+                w = {'type': wedge_el.get('type')}
+                num = wedge_el.get('number')
+                if num:
+                    w['number'] = int(num)
+                wedges.append(w)
+        if wedges:
+            m['wedges'] = wedges
+
+        # Pedal markings
+        pedals = []
+        for dir_el in measure_el.findall('direction'):
+            for pedal_el in dir_el.findall('.//pedal'):
+                p = {'type': pedal_el.get('type')}
+                line = pedal_el.get('line')
+                if line:
+                    p['line'] = line == 'yes'
+                pedals.append(p)
+        if pedals:
+            m['pedals'] = pedals
+
         # --- Notes ---
         notes = []
         for note_el in measure_el.findall('note'):
@@ -271,6 +296,11 @@ def build_json(root):
             # Chord (sounds simultaneously with previous note)
             if note_el.find('chord') is not None:
                 n['chord'] = True
+
+            # Beaming (visual grouping — kept for consistency analysis)
+            beams = [b.text.strip() for b in note_el.findall('beam') if b.text]
+            if beams:
+                n['beam'] = beams
 
             # Grace note
             if note_el.find('grace') is not None:
