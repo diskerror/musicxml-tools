@@ -2,13 +2,17 @@
 """
 strip_musicxml.py — Clean and convert MusicXML files for analysis.
 
+Input format is detected by extension:
+  .musicxml / .xml  →  Plain MusicXML
+  .mxl              →  Compressed MusicXML (ZIP) — decompressed transparently
+
 Output format is determined by the output file's extension:
   .musicxml / .xml  →  Stripped MusicXML  (removes visual/layout noise)
   .json             →  Compact JSON        (analysis-friendly structure)
 
 Usage:
     python strip_musicxml.py input.musicxml output.musicxml
-    python strip_musicxml.py input.musicxml output.json
+    python strip_musicxml.py input.mxl output.json
     python strip_musicxml.py input.musicxml output.json --pretty
     python strip_musicxml.py input.musicxml output.musicxml --pretty
     python strip_musicxml.py input.musicxml          # overwrites as stripped XML
@@ -19,6 +23,7 @@ import json
 import sys
 import os
 import argparse
+import zipfile
 
 
 # ---------------------------------------------------------------------------
@@ -412,7 +417,26 @@ def main():
 
     print(f"Reading:  {input_path}")
 
-    tree = ET.parse(input_path)
+    # Support .mxl (compressed MusicXML — a ZIP containing the XML)
+    if os.path.splitext(input_path)[1].lower() == '.mxl':
+        with zipfile.ZipFile(input_path) as zf:
+            # The root file is declared in META-INF/container.xml
+            container = ET.fromstring(zf.read('META-INF/container.xml'))
+            ns = {'ns': 'urn:oasis:names:tc:opendocument:xmlns:container'}
+            rootfile = container.find('.//ns:rootfile', ns)
+            if rootfile is None:
+                # Fallback: first .xml/.musicxml entry that isn't the container
+                rootfile_path = next(
+                    n for n in zf.namelist()
+                    if n.endswith(('.xml', '.musicxml'))
+                    and not n.startswith('META-INF')
+                )
+            else:
+                rootfile_path = rootfile.get('full-path')
+            tree = ET.ElementTree(ET.fromstring(zf.read(rootfile_path)))
+    else:
+        tree = ET.parse(input_path)
+
     root = tree.getroot()
 
     # Determine output format from file extension

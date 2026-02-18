@@ -30,13 +30,17 @@ python strip_musicxml.py input.musicxml
 # Strip to a new MusicXML file
 python strip_musicxml.py input.musicxml output_stripped.musicxml
 
-# Convert to compact JSON
+# Convert to compact JSON (also accepts .mxl compressed input)
 python strip_musicxml.py input.musicxml output.json
+python strip_musicxml.py input.mxl output.json
 
 # Pretty-print either format
 python strip_musicxml.py input.musicxml output.json --pretty
 python strip_musicxml.py input.musicxml output.musicxml --pretty
 ```
+
+Both `.musicxml` and `.mxl` (compressed MusicXML) are accepted as input.
+The `.mxl` file is decompressed transparently in memory — no temp files.
 
 ### Stripped MusicXML
 
