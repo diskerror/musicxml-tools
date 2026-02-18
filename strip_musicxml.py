@@ -361,8 +361,10 @@ def build_json(root):
         # (more accurate representation of how MusicXML stores them)
         dynamics = []
         for dir_el in measure_el.findall('direction'):
-            for dyn_el in dir_el.find('.//dynamics') or []:
-                dynamics.append(detag(dyn_el))
+            dyn_container = dir_el.find('.//dynamics')
+            if dyn_container is not None:
+                for dyn_el in dyn_container:
+                    dynamics.append(detag(dyn_el))
         if dynamics:
             m['dynamics'] = dynamics
 
