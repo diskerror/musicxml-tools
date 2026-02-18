@@ -375,14 +375,39 @@ def build_json(root):
 
 
 def write_json(data, output_path, pretty):
-    """Write the converted data dict to a JSON file."""
-    indent = 2 if pretty else None
-    # separators=(',', ':') gives the most compact output when not pretty
-    separators = None if pretty else (',', ':')
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=indent, separators=separators,
-                  ensure_ascii=False)
-        f.write('\n')  # trailing newline — good practice
+    """
+    Write the converted data dict to a JSON file.
+
+    Default (pretty=False): one measure per line.
+        - The schema/metadata header is one compact line.
+        - Each measure object is serialised compactly on its own line.
+        - The whole score is ~130 lines regardless of length — easy to read
+          sequentially or scan with a text editor or AI tool.
+
+    pretty=True: fully indented, human-readable (larger file).
+    """
+    if pretty:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+            f.write('\n')
+    else:
+        # One-measure-per-line: valid JSON, compact, sequentially readable.
+        # Separate header (everything except measures) from the measure list.
+        sep = (',', ':')   # tightest separators for inline objects
+        header = {k: v for k, v in data.items() if k != 'measures'}
+        measures = data['measures']
+        with open(output_path, 'w', encoding='utf-8') as f:
+            # Open the outer object and write the header fields inline
+            f.write(json.dumps(header, separators=sep, ensure_ascii=False)[:-1])
+            # Splice in the measures array, one measure per line
+            f.write(',"measures":[\n')
+            for i, m in enumerate(measures):
+                line = json.dumps(m, separators=sep, ensure_ascii=False)
+                f.write(line)
+                if i < len(measures) - 1:
+                    f.write(',')
+                f.write('\n')
+            f.write(']}\n')
 
 
 # ---------------------------------------------------------------------------
@@ -400,7 +425,8 @@ def parse_args():
     parser.add_argument('output', nargs='?',
                         help='Output file (default: overwrite input as XML)')
     parser.add_argument('--pretty', action='store_true',
-                        help='Pretty-print the output (XML or JSON)')
+                        help='Fully indent the output (XML or JSON). '
+                             'Default JSON is one measure per line.')
     return parser.parse_args()
 
 
