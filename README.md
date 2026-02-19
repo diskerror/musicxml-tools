@@ -9,17 +9,21 @@ to a compact, analysis-friendly JSON format.
 
 Notation software exports (Sibelius, Finale, MuseScore, etc.) embed enormous
 amounts of rendering data — pixel positions, font specs, colors, page
-dimensions — that have nothing to do with the music. This script removes that
-noise, leaving only musically meaningful content.
+dimensions — that is not meaningful to an AI.
+
+It doesn't write music, nor help an AI write music. This script removes data
+that will only waist tokens so and AI can check for patterns (are phrases
+slurred the same?), is a part playable for a skill level?, suggest voicing, etc.
+The output will have one measure per line so an AI can read it in sections.
 
 ### Output formats
 
 Output format is determined by the **output file extension**:
 
-| Extension | Output |
-|---|---|
+| Extension            | Output            |
+|----------------------|-------------------|
 | `.musicxml` / `.xml` | Stripped MusicXML |
-| `.json` | Compact JSON |
+| `.json`              | Compact JSON      |
 
 ### Usage
 
@@ -45,6 +49,7 @@ The `.mxl` file is decompressed transparently in memory — no temp files.
 ### Stripped MusicXML
 
 **Removes:**
+
 - `color` attributes (present on nearly every note in Sibelius exports)
 - `default-x` / `default-y` pixel positions
 - Font specifications (`font-family`, `font-size`, `font-style`, etc.)
@@ -52,6 +57,7 @@ The `.mxl` file is decompressed transparently in memory — no temp files.
 - Visual appearance settings (`appearance`, `credit` text boxes, `print` directives)
 
 **Keeps everything musical:**
+
 - All notes (pitch, duration, type, voice, staff)
 - Key and time signatures
 - Dynamics, articulations, ornaments
@@ -68,6 +74,7 @@ analysis. A one-line schema comment at the top of every file makes the
 structure self-documenting for both humans and AI tools.
 
 **Example (pretty-printed):**
+
 ```json
 {
   "_schema": "measures[]{number, key_fifths?, time?, tempo?, dynamics[]?, directions[]?, notes[]{voice, staff, pitch|'rest', type, dots?, chord?, tie?, grace?, artic[]?, ornament[]?, slur?, tuplet?}}",
@@ -80,10 +87,22 @@ structure self-documenting for both humans and AI tools.
       "key_fifths": -5,
       "time": "4/4",
       "tempo": 50,
-      "dynamics": ["pp"],
+      "dynamics": [
+        "pp"
+      ],
       "notes": [
-        {"voice": 1, "staff": 1, "pitch": "G#3", "type": "half"},
-        {"staff": 1, "pitch": "B3", "type": "half", "chord": true},
+        {
+          "voice": 1,
+          "staff": 1,
+          "pitch": "G#3",
+          "type": "half"
+        },
+        {
+          "staff": 1,
+          "pitch": "B3",
+          "type": "half",
+          "chord": true
+        },
         ...
       ]
     }
