@@ -12,9 +12,12 @@ amounts of rendering data — pixel positions, font specs, colors, page
 dimensions — that is not meaningful to an AI.
 
 It doesn't write music, nor help an AI write music. This script removes data
-that will only waist tokens so and AI can check for patterns (are phrases
+that will only waste tokens so an AI can check for patterns (are phrases
 slurred the same?), is a part playable for a skill level?, suggest voicing, etc.
-The output will have one measure per line so an AI can read it in sections.
+
+The JSON output uses one measure per line — this adds trivial file size
+(~1 byte per measure) but makes the output compatible with standard tools
+like `diff`, `grep`, and `wc -l`, and easy for humans to scan visually.
 
 ### Output formats
 
@@ -125,4 +128,4 @@ Typical size reduction: **85%** smaller than the original export.
 ## Authors
 
 - **Reid Woodbury Jr.** — score reduction, design, and domain requirements
-- **Hal** (Claude Sonnet, via [OpenClaw](https://openclaw.ai)) — implementation
+- **Ragger** (Claude, via [OpenClaw](https://openclaw.ai)) — implementation
